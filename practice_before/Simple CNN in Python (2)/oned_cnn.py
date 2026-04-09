@@ -25,7 +25,7 @@ def one_dimensional_cnn(input_data, filters_layer1, filters_layer2, pool_size, c
     layer2_output_relu = apply_relu(layer2_output)
     layer2_output_pooled = apply_pooling(layer2_output_relu, pool_size, pool_stride)
 
-    torch.set_printoptions(precision=2, suppress=True)
+    torch.set_printoptions(precision=2, sci_mode=True)
     print(f"Input data: {input_data}\n")
     print(f"Output convolution 1:\n{layer1_output}")
     print(f"ReLU 1:\n{layer1_output_relu}")
