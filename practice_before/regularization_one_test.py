@@ -133,8 +133,19 @@ def train_with_data_augmentation(model_d1, epochs):
    
     print("Device", device)
     # Define the loss function and optimizer
-    criterion = nn.CrossEntropyLoss()
-    optimizer = optim.Adam(model_d1.parameters(), lr=0.001)
+    criterion = nn.CrossEntropyLoss(label_smoothing=0.1 )
+    optimizer2 = optim.Adam(model_d1.parameters(), lr=0.001)# old
+    optimizer = torch.optim.Adam(model_d1.parameters(), lr=0.001, weight_decay=1e-4) #normal adam has given the best results
+    #optimizer 3
+    optimizer3 = torch.optim.AdamW(model_d1.parameters(), lr=0.001, weight_decay=1e-4)
+    #scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=50, gamma=0.5)
+    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
+    optimizer,
+    mode='min',
+    factor=0.5,
+    patience=10
+)
+
 
     # Define data augmentation transformations for training (hint: think about what transformations can help with learning more robust reopresentations)
     transform_train = transforms.Compose([
@@ -148,7 +159,7 @@ def train_with_data_augmentation(model_d1, epochs):
     # Create data loaders for training, validation, and testing using the defined transformations in transform_train
     train_loader, val_loader, test_loader, _ = train_and_viz_cnn.get_half_db(transform_train, batch_size=128)# YOUR CODE HERE #
     
-    val_losses_data_aug = train_and_viz_cnn.train_model(model_d1, train_loader, val_loader, epochs, criterion, optimizer)
+    val_losses_data_aug = train_and_viz_cnn.train_model(model_d1, train_loader, val_loader, epochs, criterion, optimizer, scheduler)
     return val_losses_data_aug, test_loader
 
 
@@ -215,7 +226,7 @@ def test_model(model, test_loader):
 
 
 
-model_d1 = regularization_in_one_file.SimpleCNN_dropout(dropout_prob=0.3).to(device)
+model_d1 = regularization_in_one_file.SimpleCNN_dropout(dropout_prob=0.2).to(device)
 epochs = 200
 val_looses_data_aug, test_loader = train_with_data_augmentation(model_d1, epochs)
 acc, f1 = test_model(model_d1, test_loader)

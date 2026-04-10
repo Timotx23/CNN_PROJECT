@@ -122,7 +122,7 @@ def get_half_db(transform_train=None, batch_size=128):
     num_classes = len(class_names)
 
     # 📌 Number of samples per class (CIFAR-10 has 5000 per class)
-    samples_per_class = int(5000 * 0.5)
+    samples_per_class = int(5000 * 0.75)
 
     # Split ratios
     train_split = int(0.8 * samples_per_class)
@@ -193,7 +193,7 @@ def visualize_data(class_names, data_loader):
 
 
 # Training Loop with Validation
-def train_model(model, train_loader, val_loader, epochs, criterion, optimizer):
+def train_model(model, train_loader, val_loader, epochs, criterion, optimizer, scheduler):
     model.to(device)
     # Lists to store training and validation losses, and accuracies
     train_losses = []
@@ -233,6 +233,7 @@ def train_model(model, train_loader, val_loader, epochs, criterion, optimizer):
 
         # Validation loop
         model.eval()
+        
         total_val_loss = 0.0
         correct_val = 0
         total_val = 0
@@ -257,6 +258,7 @@ def train_model(model, train_loader, val_loader, epochs, criterion, optimizer):
         val_accuracy = correct_val / total_val
         val_accuracies.append(val_accuracy)
 
+        scheduler.step(avg_val_loss) #adapt learning rate
         # Print progress every 10 epochs
         if (epoch + 1) % 10 == 0:
             print(f'Epoch [{epoch+1}/{epochs}], '

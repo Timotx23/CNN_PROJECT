@@ -33,17 +33,17 @@ class SimpleCNN(nn.Module):
         super(SimpleCNN, self).__init__()
         
         # First Convolutional Layer
-        self.conv1 = nn.Conv2d(in_channels= 3 , out_channels=16, kernel_size=3, padding=1)
-        self.bn1 = nn.BatchNorm2d(16) #adding batch norm
+        self.conv1 = nn.Conv2d(in_channels= 3 , out_channels=32, kernel_size=3, padding=1)
+        self.bn1 = nn.BatchNorm2d(32) #adding batch norm
         
         # Second Convolutional Layer
         # remember to calculate the in_channels based on the out_channels of the previous layer
-        self.conv2 = nn.Conv2d(in_channels= 16 , out_channels= 32, kernel_size=3, padding=1) ## YOUR CODE HERE ##
-        self.bn2 = nn.BatchNorm2d(32) #adding batch norm
+        self.conv2 = nn.Conv2d(in_channels= 32 , out_channels= 64, kernel_size=3, padding=1) ## YOUR CODE HERE ##
+        self.bn2 = nn.BatchNorm2d(64) #adding batch norm
         
         # Third Convolutional Layer
-        self.conv3 = nn.Conv2d(in_channels=32, out_channels=64, kernel_size=3, padding=1)
-        self.bn3 = nn.BatchNorm2d(64) #adding batch norm
+        self.conv3 = nn.Conv2d(in_channels=64, out_channels= 128, kernel_size=3, padding=1)
+        self.bn3 = nn.BatchNorm2d(128) #adding batch norm
 
         # Activation and Pooling
         self.relu = nn.ReLU()## YOUR CODE HERE ##
@@ -52,10 +52,10 @@ class SimpleCNN(nn.Module):
         # Fully Connected Layers
         # calculate the in_features based on the FLATTENED output size after convolutions and pooling
         # calculate out_features based on the input size of the second fully connected layer
-        fc1_in_features = 64 * 8 * 8 ## YOUR CODE HERE ##
-        fc1_out_features =  64 ## YOUR CODE HERE ##
+        fc1_in_features = 128 * 8 * 8 ## YOUR CODE HERE ##
+        fc1_out_features =  128 ## YOUR CODE HERE ##
         self.fc1 = nn.Linear(in_features=fc1_in_features, out_features=fc1_out_features)
-        self.fc2 = nn.Linear(in_features=64, out_features=10)
+        self.fc2 = nn.Linear(in_features=128, out_features=10) #must match the final output size of the last convelutional layer
 
     def forward(self, x):
         # First Convolutional Block
@@ -75,7 +75,7 @@ class SimpleCNN(nn.Module):
         x = self.relu(x)
         
         # Flatten for Fully Connected Layers
-        x = x.view(-1, self.fc1.in_features)
+        x = torch.flatten(x, 1)
         
         # Fully Connected Layers
         x = self.fc1(x)
@@ -88,13 +88,13 @@ class SimpleCNN(nn.Module):
 # Define a simple CNN model
 class SimpleCNN_dropout(SimpleCNN):
     # use inheritance to avoid code duplication
-    def __init__(self, dropout_prob=0.5):
+    def __init__(self, dropout_prob):
         ## YOUR CODE HERE ##
         # dropout applied after the each convolutional layer
         super().__init__()
         
         self.dropout = nn.Dropout2d(p = dropout_prob) ## YOUR CODE HERE ##
-        self.dropout_fc = nn.Dropout(p=dropout_prob)
+        self.dropout_fc = nn.Dropout(p= 0.3)
 
 
     def forward(self, x):
