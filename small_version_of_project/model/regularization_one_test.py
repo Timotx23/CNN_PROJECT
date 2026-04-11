@@ -42,13 +42,11 @@ def train_with_data_augmentation(model_d1, epochs):
 
     # Define data augmentation transformations for training (hint: think about what transformations can help with learning more robust reopresentations)
     transform_train = transforms.Compose([
-    transforms.RandomCrop(32, padding=4),
     transforms.RandomHorizontalFlip(),
-    transforms.RandomRotation(5),
-    transforms.ColorJitter(brightness=0.1, contrast=0.1, saturation=0.1),
+    transforms.RandomCrop(32, padding=4),
     transforms.ToTensor(),
-    transforms.Normalize((0.4914, 0.4822, 0.4465),
-                         (0.2470, 0.2435, 0.2616))
+    transforms.Normalize((0.5, 0.5, 0.5),
+                         (0.5, 0.5, 0.5))
 ]) #YOUR CODE HERE #
 
     # Create data loaders for training, validation, and testing using the defined transformations in transform_train
