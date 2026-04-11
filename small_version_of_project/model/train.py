@@ -236,7 +236,7 @@ def train_model(model, train_loader, val_loader, epochs, criterion, optimizer, s
                 f'Training Loss: {avg_train_loss:.4f}, Training Accuracy: {train_accuracy * 100:.2f}%, '
                 f'Validation Loss: {avg_val_loss:.4f}, Validation Accuracy: {val_accuracy * 100:.2f}%')
         #plotting_train_data(train_losses, val_losses, train_accuracies, val_accuracies)
-        torch.save(model.state_dict(), "model_d1.pth")
+        torch.save(model.state_dict(), "model_d4.pth")
     return val_losses
 
 
