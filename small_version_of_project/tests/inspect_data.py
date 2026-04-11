@@ -1,4 +1,4 @@
-import small_version_of_project.train as train
+import small_version_of_project.model.train as train
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 from sklearn.metrics import confusion_matrix, f1_score
 import seaborn as sns
 from torch.utils.data import DataLoader
-import small_version_of_project.train as train
+import small_version_of_project.model.train as train
 
 def test_dataset():
     transform_train = transforms.Compose([

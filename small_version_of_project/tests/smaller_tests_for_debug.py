@@ -1,4 +1,4 @@
-import small_version_of_project.CNN_model as CNN_model
+import small_version_of_project.model.CNN_model as CNN_model
 
 # Import necesary libraries
 import torch
@@ -10,9 +10,9 @@ import matplotlib.pyplot as plt
 from sklearn.metrics import confusion_matrix, f1_score
 import seaborn as sns
 from torch.utils.data import DataLoader
-import train
+import small_version_of_project.model.train as train
 train_loader, val_loader, test_loader, class_names = train.get_data_loaders(None)
-import CNN_model
+import small_version_of_project.model.CNN_model as CNN_model
 
 device = CNN_model.to_devices()
 
