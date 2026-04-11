@@ -9,6 +9,7 @@ HEIGHT = 32
 WIDTH = 32
 RGB = 3
 device = model.CNN_model.to_devices()
+trained_weights = torch.load("model/model_d2.pth", map_location=device)
 
 class PreProcessCamera:
     def __init__(self):
@@ -42,62 +43,63 @@ class PreProcessCamera:
                     test_cap.release()
                     
                     if success:
+                        print("CAMERA WORKING", cam.name, cam.index)
                         return cam.index
                     else:
                         print(f"Warning: Index {cam.index} matched name but failed to read a frame. Trying next...")
                 else:
                     print(f"Warning: Index {cam.index} matched but failed to open.")
 
-        raise ValueError(f"Camera '{cam.name}' could not be found or opened for use.")
+        raise ValueError("FaceTime HD Camera could not be found or opened for use.")
     
     
 
 class Camera(PreProcessCamera):
     def __init__(self, dropout_prob):
         super().__init__()
-        self.load_model = LoadModel(dropout_prob)
+        self.load_model: LoadModel = LoadModel(dropout_prob)
+        self.tensorizedframe: TensorizedFrame = TensorizedFrame()
 
        
     def get_video(self):
         video = cv2.VideoCapture(self.path, self.os)
         frame_counter = 0
         while True:
-
             success, frame = video.read()
             if success:
                 frame_counter +=1
                 if frame_counter % 3 ==0: # make system only work at 10 fps for now in order to not overload the cnn model
-                    tensorizedframe = TensorizedFrame(frame)
-                    correct_frame_format: torch.Tensor =  tensorizedframe.correct_tensor()
-                    #call model with correct_frame_format
-                    # model_call = self.load_model(correct_frame_format)
+                    correct_frame_format: torch.Tensor =  self.tensorizedframe.correct_tensor(frame)
+                    correct_frame_format = correct_frame_format.to(device)
+                    model_call: LoadModel = self.load_model.set_frame_to_model(correct_frame_format)
+                    prediction: tuple = self.load_model.get_predictions(model_call)
+                    if prediction != False:
+                        print(prediction)
+                    
             else:
                 raise ValueError ("Failed to verify video")
             if cv2.waitKey(1) & 0xFF == ord('q'):
                 break
         video.release()
         cv2.destroyAllWindows()
-
+    
+ 
     def is_testing(self):
+        """Add a future testing mode sothat model is only called if there is actual testing going on"""
         ...
     
     
 
-
-
-
-
 class TensorizedFrame:
-    def __init__(self,frame) -> None:
+
+    def __init__(self,) -> None:
         """This class has 1 major task which is to prepare the frame for the CNN"""
-        self.frame: np.ndarray =frame
-        self.corrected_frame: np.ndarray = self._corrected_cnn_format()
-        self.final_correct_tensor_format: torch.Tensor = self._set_tensor_dimentions()
+        self.corrected_frame = None
+     
+
     
-
-
-    def _corrected_cnn_format(self) -> np.ndarray:
-        correct_frame_size: np.ndarray = cv2.resize(self.frame, (WIDTH,HEIGHT)) #my model was trained on 32 x 32 images so it is good to keep that format up 
+    def _corrected_cnn_format(self, frame: np.ndarray) -> np.ndarray:
+        correct_frame_size: np.ndarray = cv2.resize(frame, (WIDTH,HEIGHT)) #my model was trained on 32 x 32 images so it is good to keep that format up 
         correct_format: np.ndarray = cv2.cvtColor(correct_frame_size, cv2.COLOR_BGR2RGB) # Tensors require RGB but cv2 outputs BGR meanuing ut must be converted
         return correct_format
 
@@ -110,18 +112,36 @@ class TensorizedFrame:
         tensor_frame: torch.Tensor = tensor_frame.unsqueeze(0)
         return tensor_frame
     
-    def correct_tensor(self):
-        return self.final_correct_tensor_format
+    def correct_tensor(self, frame) -> torch.Tensor:
+        self.corrected_frame: np.ndarray = self._corrected_cnn_format(frame)
+        final_correct_tensor_format: torch.Tensor = self._set_tensor_dimentions()
+        return final_correct_tensor_format
 
     
 
 class LoadModel:
-    def __init__(self):
-        self.model = model.CNN_model.SimpleCNN_dropout(dropout_prob=0.2).to(self.device)
-        self.model.load_state_dict()# Here i have to add the finished trained weights
+    def __init__(self, dropout_prob):
+        self.model = model.CNN_model.SimpleCNN_dropout(dropout_prob).to(device)
+        self.model.load_state_dict(trained_weights)# Here i have to add the finished trained weights
         self.model.to(device)
         self.model.eval()
         
 
-    def set_frame_to_model(self,frame):
-        return self.model(frame)
+    def set_frame_to_model(self,frame) -> model.CNN_model.SimpleCNN_dropout:
+        with torch.no_grad():
+            return self.model(frame)
+    
+    def get_predictions(self, model) -> tuple[str, float]:
+        prediction_item = torch.argmax(model, dim = 1)
+        probs = torch.softmax(model, dim = 1)
+        pred_idx: int = prediction_item.item() #converts a pytorch tensor into a normal number
+        confidence:float = probs[0][pred_idx].item()
+
+        class_names = [
+                "airplane", "automobile", "bird", "cat", "deer",
+                "dog", "frog", "horse", "ship", "truck"]
+        try:
+            item_predicted: str = class_names[prediction_item]
+            return (item_predicted, confidence)
+        except IndexError:
+            return False

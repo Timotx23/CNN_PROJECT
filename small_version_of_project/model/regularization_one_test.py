@@ -59,10 +59,6 @@ def train_with_data_augmentation(model_d1, epochs):
     return val_losses_data_aug, test_loader
 
 
-
-
-
-
 # Test the Model
 def test_model(model, test_loader):
 
