@@ -48,7 +48,7 @@ class CallModel:
         input_thread.start()
         dropout_prob=0.2
         camera = Camera(dropout_prob, self)
-        was_off = False
+
        
         
         while self.running:
