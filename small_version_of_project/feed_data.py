@@ -15,7 +15,7 @@ class PreProcessCamera:
     def __init__(self):
         self.os = self.get_os()
         self.path = self.get_camera_path()
-    def get_os(self):
+    def get_os(self) ->cv2:
         """
         Autodetect which OS is being used  -> important for the detection of the camera name / index.
         Different os have different backend values to access for camera 
@@ -54,45 +54,39 @@ class PreProcessCamera:
     
     
 
-class Camera(PreProcessCamera):
-    def __init__(self, dropout_prob):
+class Camera:
+    def __init__(self, dropout_prob: float, model):
         super().__init__()
         self.load_model: LoadModel = LoadModel(dropout_prob)
         self.tensorizedframe: TensorizedFrame = TensorizedFrame()
+        self.frame_counter = 0
+        self.video = model.video
+        self.model = model
+       
 
        
-    def get_video(self):
-        video = cv2.VideoCapture(self.path, self.os)
-        frame_counter = 0
-        while True:
-            success, frame = video.read()
-            if success:
-                frame_counter +=1
-                if frame_counter % 3 ==0: # make system only work at 10 fps for now in order to not overload the cnn model
-                    correct_frame_format: torch.Tensor =  self.tensorizedframe.correct_tensor(frame)
-                    correct_frame_format = correct_frame_format.to(device)
-                    model_call: LoadModel = self.load_model.set_frame_to_model(correct_frame_format)
-                    prediction: tuple = self.load_model.get_predictions(model_call)
-                    if prediction != False:
-                        print(prediction)
-                    
-            else:
-                raise ValueError ("Failed to verify video")
-            if cv2.waitKey(1) & 0xFF == ord('q'):
-                break
-        video.release()
-        cv2.destroyAllWindows()
+    def get_video(self, output_queue ) -> bool:
+        success, frame = self.video.read()
+        if not success :
+            raise ValueError ("Failed to verify video")
+
+        self.frame_counter +=1
+        if self.frame_counter % 3 ==0 and self.model.test_mode == True: # make system only work at 10 fps for now in order to not overload the cnn model
+            correct_frame_format: torch.Tensor =  self.tensorizedframe.correct_tensor(frame)
+            correct_frame_format = correct_frame_format.to(device)
+            model_call: LoadModel = self.load_model.set_frame_to_model(correct_frame_format)
+            prediction: tuple = self.load_model.get_predictions(model_call)
+            output_queue.put(prediction)
+        return True
     
  
-    def is_testing(self):
-        """Add a future testing mode sothat model is only called if there is actual testing going on"""
-        ...
+    
     
     
 
 class TensorizedFrame:
 
-    def __init__(self,) -> None:
+    def __init__(self) -> None:
         """This class has 1 major task which is to prepare the frame for the CNN"""
         self.corrected_frame = None
      
@@ -140,6 +134,7 @@ class LoadModel:
         class_names = [
                 "airplane", "automobile", "bird", "cat", "deer",
                 "dog", "frog", "horse", "ship", "truck"]
+        
         try:
             item_predicted: str = class_names[prediction_item]
             return (item_predicted, confidence)

@@ -66,7 +66,7 @@ class SimpleCNN_dropout(CNN_layers):
         self.dropout_fc = nn.Dropout(p= 0.3)
 
 
-    def forward(self, x):
+    def forward(self, x) -> torch.tensor:
         x = self.conv1(x)
         x = self.bn1(x) #batch normalization 
         x = self.relu(x)
